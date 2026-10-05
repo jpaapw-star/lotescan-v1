@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ScanLote AI - Inventário por Visão</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --card: #09090b;
+      --card-sub: #121215;
+      --card-inner: #18181b;
+      --border: #27272a;
+      --border-focus: #3f3f46;
+      --text: #ffffff;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --emerald: #10b981;
+      --emerald-bg: rgba(16, 185, 129, 0.12);
+      --amber: #f59e0b;
+      --rose: #ef4444;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      padding: 16px 20px;
+      font-size: 13px;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1400px; margin: 0 auto; }
+
+    /* BARRA SUPERIOR */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      display: inline-block;
+    }
+    .tag-model {
+      background: #18181b;
+      border: 1px solid #3f3f46;
+      color: #e4e4e7;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .station-badge {
+      background: #18181b;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-top {
+      background: #18181b;
+      color: #f4f4f5;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+      text-decoration: none;
+    }
+    .btn-top:hover { background: #27272a; border-color: #52525b; }
+    .btn-top-primary {
+      background: #064e3b;
+      border-color: #047857;
+      color: #6ee7b7;
+    }
+    .btn-top-primary:hover { background: #047857; color: #fff; }
+
+    /* CARDS DE LOTE, CAIXA E CONTADORES */
+    .lote-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .card-meta {
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .card-meta-icon {
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+    .card-meta label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .card-meta strong {
+      font-size: 15px;
+      color: #ffffff;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .btn-novo-lote {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-novo-lote:hover { background: #e4e4e7; }
+
+    /* FITA DE STATUS COM 5 BLOCOS */
+    .counters-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .counter-pill {
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 110px;
+      text-align: center;
+    }
+    .counter-pill label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .counter-pill b {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .counter-pill.c-green b { color: var(--emerald); }
+    .counter-pill.c-amber b { color: var(--amber); }
+    .counter-pill.c-rose b { color: var(--rose); }
+
+    /* ZONA DE CAPTURA DUPLA (CÂMERA + DROPZONE) */
+    .capture-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .camera-card-trigger {
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .camera-card-trigger:hover {
+      background: #121215;
+      border-color: #3f3f46;
+    }
+    .icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #18181b;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+    .trigger-text strong {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+    .trigger-text span {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .dropzone-card {
+      background: #09090b;
+      border: 2px dashed #27272a;
+      border-radius: 8px;
+      padding: 16px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .dropzone-card:hover {
+      border-color: #52525b;
+      background: #121215;
+    }
+    .dropzone-content {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .badge-cruzamento {
+      background: #18181b;
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 10px;
+      color: var(--amber);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* BARRA DE MODO EM SEQUÊNCIA */
+    .sequence-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #121215;
+      border: 1px solid #27272a;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .chk-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: #e4e4e7;
+    }
+
+    /* MINIATURAS ANTES DO ENVIO */
+    .thumbs-container {
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .thumbs-list {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 0;
+    }
+    .thumb-item {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .thumb-del {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: var(--rose);
+      color: #fff;
+      border: none;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* TABELA PRINCIPAL FORMATO A-I */
+    .table-card {
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .table-header-bar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .table-title {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-count {
+      background: #18181b;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: normal;
+    }
+    .search-box {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #fff;
+      font-size: 12px;
+      width: 260px;
+      font-family: inherit;
+    }
+    .search-box::placeholder { color: var(--text-dim); }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11.5px;
+      min-width: 980px;
+    }
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #18181b;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background: #0d0d10;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      position: sticky;
+      top: 0;
+    }
+    tr:hover td { background: #0c0c0e; }
+    td.center, th.center { text-align: center; }
+    .model-name {
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .model-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .serial-val {
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
+    .serial-sub {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .badge-revisar {
+      background: #451a03;
+      border: 1px solid #b45309;
+      color: #fcd34d;
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .nfe-input {
+      background: #18181b;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11px;
+      width: 90px;
+    }
+    .link-btn {
+      background: #18181b;
+      border: 1px solid var(--border);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 11px;
+      display: inline-block;
+      transition: background 0.15s;
+    }
+    .link-btn:hover { background: #27272a; }
+
+    /* FOOTER STATUS */
+    .footer-bar {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 10.5px;
+      color: var(--text-dim);
+      padding: 8px 0;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* MODAL DE CÂMERA PROFISSIONAL EM TELA CHEIA */
+    .camera-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.94);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .camera-modal.active { display: flex; }
+    .camera-box {
+      background: #09090b;
+      border: 1px solid #3f3f46;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 800px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.9);
+    }
+    .camera-box-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #121215;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .camera-viewfinder {
+      position: relative;
+      background: #000;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      max-height: 480px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .camera-viewfinder video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .camera-reticle {
+      position: absolute;
+      inset: 12%;
+      border: 2px dashed rgba(255,255,255,0.25);
+      border-radius: 8px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .camera-reticle span {
+      background: rgba(0,0,0,0.7);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: rgba(255,255,255,0.7);
+    }
+    .camera-flash {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.1s;
+    }
+    .camera-box-footer {
+      padding: 14px 16px;
+      background: #121215;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-snap {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+    .btn-snap:hover { background: #e4e4e7; }
+    .camera-reel {
+      padding: 8px 16px;
+      background: #09090b;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      border-top: 1px solid #18181b;
+      min-height: 60px;
+      align-items: center;
+    }
+
+    @media(max-width: 768px) {
+      .capture-grid { grid-template-columns: 1fr; }
+      .counters-row { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .lote-bar { flex-direction: column; align-items: stretch; }
+      .sequence-bar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <!-- CABEÇALHO -->
+  <div class="header-bar">
+    <div class="brand-group">
+      <span class="brand-title">
+        <span class="dot"></span>
+        <span>SCANLOTE AI</span>
+      </span>
+      <span class="tag-model">GEMINI 3.5 FLASH LITE</span>
+      <button class="station-badge" onclick="trocarEstacao()" title="Clique para alterar a Estação / Celular" style="cursor:pointer; background:#18181b; border:1px solid #3f3f46; color:#e4e4e7;">
+        🖥️ ESTAÇÃO: <strong id="lblEstacao" style="color:#10b981;">DEV-CARREGANDO</strong> ✏️
+      </button>
+    </div>
+    <div class="header-actions">
+      <button class="btn-top" onclick="limparOrfaos()">🖼️ Fotos Órfãs</button>
+      <button class="btn-top" onclick="abrirPlanilha()">📊 Planilha</button>
+      <button class="btn-top" onclick="reprocessar()">⟳ Reprocessar</button>
+      <a class="btn-top btn-top-primary" id="linkWebApp" href="#" target="_blank" style="display:none;">🌐 Web App Tela Cheia</a>
+    </div>
+  </div>
+
+  <!-- LINHA DE LOTE E CAIXA CONGELADA -->
+  <div class="lote-bar">
+    <div class="card-meta">
+      <span class="card-meta-icon">📦</span>
+      <div>
+        <label>LOTE ATUAL</label>
+        <strong id="lblLote">LOTE-CARREGANDO...</strong>
+      </div>
+    </div>
+
+    <div class="card-meta">
+      <span class="card-meta-icon">🔒</span>
+      <div>
+        <label>CAIXA CONGELADA</label>
+        <strong id="lblCaixa" style="color:var(--emerald);">CAIXA 1</strong>
+      </div>
+    </div>
+
+    <button class="btn-novo-lote" onclick="novoLote()">
+      <span>+</span>
+      <span>NOVO LOTE / CAIXA</span>
+    </button>
+  </div>
+
+  <!-- 5 CONTADORES (IDÊNTICO À FOTO) -->
+  <div class="counters-row">
+    <div class="counter-pill">
+      <label>Fotos Recebidas</label>
+      <b id="cRecebidas">0</b>
+    </div>
+    <div class="counter-pill c-green">
+      <label>✓ Processadas</label>
+      <b id="cProcessadas">0</b>
+    </div>
+    <div class="counter-pill c-amber">
+      <label>⏱️ Pendentes</label>
+      <b id="cPendentes">0</b>
+    </div>
+    <div class="counter-pill c-rose">
+      <label>⚠️ Erros</label>
+      <b id="cErros">0</b>
+    </div>
+    <div class="counter-pill">
+      <label>Produtos Identificados</label>
+      <b id="cIdentificados">0</b>
+    </div>
+  </div>
+
+  <!-- ÁREA DE CAPTURA DUPLA (CÂMERA + GALERIA MULTI-SELEÇÃO) -->
+  <div class="capture-grid">
+    <!-- BOTÃO DA CÂMERA -->
+    <div class="camera-card-trigger" onclick="dispararCamera()">
+      <div class="icon-circle">📷</div>
+      <div class="trigger-text">
+        <strong>FOTOGRAFAR COM A CÂMERA</strong>
+        <span>Disparo contínuo: frente, serial, etiqueta e caixa</span>
+      </div>
+    </div>
+
+    <!-- DROPZONE / GALERIA DE MÚLTIPLAS FOTOS -->
+    <div class="dropzone-card" onclick="document.getElementById('galleryInput').click()">
+      <div class="dropzone-content">
+        <div class="icon-circle">☁️</div>
+        <div class="trigger-text">
+          <strong>SELECIONAR VÁRIAS FOTOS DA GALERIA</strong>
+          <span id="lblDropDestino">Marque dezenas de fotos de uma vez só na galeria ou arraste arquivos</span>
+        </div>
+      </div>
+      <div class="badge-cruzamento">
+        <span>✨</span>
+        <span>Cruzamento Automático</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLE DE DISPARO EM SEQUÊNCIA -->
+  <div class="sequence-bar">
+    <label class="chk-label">
+      <input type="checkbox" id="chkAutoReopen" checked style="accent-color:#10b981; width:17px; height:17px;">
+      <span><strong>Disparo Contínuo:</strong> Reabrir a câmera automaticamente após cada foto confirmada</span>
+    </label>
+    <button class="btn-top btn-top-primary" id="btnNextPhoto" onclick="dispararCamera()" style="display:none;">
+      📸 BATER PRÓXIMA FOTO (<span id="photoBadgeCount">0</span> preparadas)
+    </button>
+  </div>
+
+  <!-- INPUTS SEPARADOS -->
+  <!-- 1. Câmera Direta para Celular (Aciona câmera traseira) -->
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleCameraSnap(event)">
+  <!-- 2. Galeria com Seleção Múltipla (SEM capture: permite marcar dezenas de fotos na galeria) -->
+  <input type="file" id="galleryInput" multiple accept="image/*" style="display:none;" onchange="handleGalleryFiles(event)">
+
+  <!-- FITA DE MINIATURAS ANTES DO ENVIO -->
+  <div class="thumbs-container" id="thumbsBox">
+    <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px; font-family:monospace; display:flex; justify-content:space-between;">
+      <span>Fotografias preparadas para envio (<span id="photoCounter">0</span>):</span>
+      <button class="btn-top" onclick="dispararCamera()" style="padding:2px 8px; font-size:10px;">+ Adicionar mais fotos</button>
+    </div>
+    <div class="thumbs-list" id="thumbsList"></div>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="btn-novo-lote" id="btnUpload" onclick="enviarFotosFila()" style="flex:1;">
+        🚀 ENVIAR LOTE (<span id="photoBtnCount">0</span> FOTOS) PARA IA E PLANILHA
+      </button>
+      <button class="btn-top" onclick="limparFila()">Limpar Tudo</button>
+    </div>
+  </div>
+
+  <div id="statusAlert" style="margin-bottom:12px; font-family:monospace; font-size:11px; display:none; padding:10px 14px; border-radius:6px; line-height:1.5;"></div>
+
+  <!-- TABELA PRINCIPAL (COLUNAS A-I) -->
+  <div class="table-card">
+    <div class="table-header-bar">
+      <div class="table-title">
+        <span>PLANILHA PRINCIPAL (COLUNAS A–I)</span>
+        <span class="badge-count" id="tableCountBadge">0 itens</span>
+      </div>
+      <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar Modelo, Serial, IMEI, EAN..." oninput="filtrarTabela()">
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="center" style="width:40px;">#</th>
+            <th>A: MODELO</th>
+            <th>B: SERIAL / IMEI</th>
+            <th>C: EAN</th>
+            <th class="center">D: QTDE</th>
+            <th class="center">E: DATA</th>
+            <th class="center">F: QTD/DIA</th>
+            <th class="center">G: CAIXA</th>
+            <th>H: NFE</th>
+            <th class="center">I: LINK FOTO</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10" class="center" style="color:var(--text-dim); padding:24px;">Carregando registros da planilha...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FOOTER DESCRITIVO DOS CAMPOS (IGUAL À FOTO) -->
+  <div class="footer-bar">
+    <div>Campos: A (Modelo) • B (Serial/IMEI) • C (EAN) • D (Qtde) • E (Data) • F (Qtd/Dia) • G (Caixa) • H (Nfe) • I (Link) • Deduplicação Automática Ativa</div>
+    <div id="serverClock">—</div>
+  </div>
+</div>
+
+<!-- MODAL CÂMERA AO VIVO -->
+<div class="camera-modal" id="cameraModal">
+  <div class="camera-box">
+    <div class="camera-box-header">
+      <div style="font-weight:700; display:flex; align-items:center; gap:8px;">
+        <span class="dot"></span>
+        <span>CÂMERA OPERACIONAL — MODO CONTÍNUO</span>
+      </div>
+      <button class="btn-top" onclick="fecharCamera()" style="padding:4px 8px;">✕ Fechar</button>
+    </div>
+
+    <div class="camera-viewfinder">
+      <video id="videoElem" autoplay playsinline muted></video>
+      <div class="camera-reticle">
+        <span>Enquadre o aparelho, etiqueta de serial ou código de barras</span>
+      </div>
+      <div class="camera-flash" id="cameraFlash"></div>
+      <canvas id="canvasElem" style="display:none;"></canvas>
+    </div>
+
+    <div class="camera-reel" id="cameraReel">
+      <span style="font-size:11px; color:var(--text-dim); font-family:monospace;">Nenhuma foto capturada ainda.</span>
+    </div>
+
+    <div class="camera-box-footer">
+      <button class="btn-top" onclick="alternarLente()">🔄 Inverter Lente</button>
+      <button class="btn-snap" onclick="tirarFotoCamera()">
+        <span>📸</span>
+        <span>DISPARAR FOTO</span>
+      </button>
+      <button class="btn-top-primary btn-top" onclick="fecharEEnviarCamera()">
+        <span>✓ Concluir (<span id="snapCount">0</span>)</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Armazenamento seguro que nunca quebra em celular / iframe / navegação anônima
+  function safeStorageGet(key, def) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key) || def;
+      }
+    } catch (e) {}
+    return def;
+  }
+
+  function safeStorageSet(key, val) {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, val);
+      }
+    } catch (e) {}
+  }
+
+  // Gera identificador único e isolado para este aparelho (ex: DEV-65BA69)
+  function obterDeviceIdInicial() {
+    let id = safeStorageGet('scanlote_device_id', '');
+    if (!id || id === 'DEV-A1') {
+      id = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      safeStorageSet('scanlote_device_id', id);
+    }
+    return id;
+  }
+
+  let DEVICE_ID = obterDeviceIdInicial();
+  let LOTE_ID = safeStorageGet('scanlote_lote_id', '');
+  let mediaStream = null;
+  let currentFacing = 'environment';
+  let filaFotos = [];
+  let listaProdutosCache = [];
+  let webAppUrl = '';
+  let webrtcSuportado = true;
+
+  function trocarEstacao() {
+    const atual = DEVICE_ID;
+    const novo = prompt('Defina o Nome / Código de Isolamento desta Estação ou Celular (Ex: CELULAR-01, BANCADA-A):', atual);
+    if (!novo || !novo.trim()) return;
+    DEVICE_ID = novo.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    safeStorageSet('scanlote_device_id', DEVICE_ID);
+    const lbl = document.getElementById('lblEstacao');
+    if (lbl) lbl.innerText = DEVICE_ID;
+    LOTE_ID = '';
+    safeStorageSet('scanlote_lote_id', '');
+    setAlerta('✓ Estação configurada como ' + DEVICE_ID + '. Carregando dados isolados...', 'success');
+    atualizarTudo();
+  }
+
+  function inicializarApp() {
+    const elEstacao = document.getElementById('lblEstacao');
+    if (elEstacao) elEstacao.innerText = DEVICE_ID;
+
+    // Retry com tolerância para inicialização do Google Apps Script em conexões móveis
+    let tentativas = 0;
+    function conectarServidor() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        atualizarTudo();
+        setInterval(atualizarTudo, 4000);
+
+        google.script.run.withSuccessHandler(url => {
+          if (url) {
+            webAppUrl = url;
+            const link = document.getElementById('linkWebApp');
+            if (link) {
+              link.href = url;
+              link.style.display = 'inline-flex';
+            }
+          }
+        }).getWebAppUrl();
+      } else if (tentativas < 30) {
+        tentativas++;
+        setTimeout(conectarServidor, 250);
+      } else {
+        setAlerta('⚠️ Aguardando resposta do Google Apps Script... Se você acabou de abrir no celular, recarregue a página.', 'warning');
+      }
+    }
+    conectarServidor();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarApp);
+  } else {
+    inicializarApp();
+  }
+
+  function setAlerta(msg, tipo = 'info') {
+    const el = document.getElementById('statusAlert');
+    if (!msg) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.innerHTML = msg;
+    if (tipo === 'success') {
+      el.style.background = '#064e3b'; el.style.color = '#6ee7b7'; el.style.border = '1px solid #047857';
+    } else if (tipo === 'error') {
+      el.style.background = '#7f1d1d'; el.style.color = '#fca5a5'; el.style.border = '1px solid #b91c1c';
+    } else {
+      el.style.background = '#18181b'; el.style.color = '#f59e0b'; el.style.border = '1px solid #3f3f46';
+    }
+  }
+
+  function atualizarTudo() {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+    google.script.run
+      .withSuccessHandler(renderizarDados)
+      .withFailureHandler(err => setAlerta('Erro ao carregar dados: ' + (err.message || String(err)), 'error'))
+      .getAppState(DEVICE_ID, LOTE_ID);
+  }
+
+  function renderizarDados(state) {
+    if (!state) return;
+    if (state.lote) {
+      LOTE_ID = state.lote.id;
+      safeStorageSet('scanlote_lote_id', LOTE_ID);
+      document.getElementById('lblLote').innerText = state.lote.id;
+      document.getElementById('lblCaixa').innerText = 'CAIXA ' + state.lote.caixa;
+      document.getElementById('lblDropDestino').innerText = 'Marque dezenas de fotos na galeria para o ' + state.lote.id + ' (Caixa ' + state.lote.caixa + ')';
+    }
+
+    const c = state.contadores || {};
+    document.getElementById('cRecebidas').innerText = c.fotosRecebidas || 0;
+    document.getElementById('cProcessadas').innerText = c.fotosProcessadas || 0;
+    document.getElementById('cPendentes').innerText = c.pendentes || 0;
+    document.getElementById('cErros').innerText = c.erros || 0;
+
+    listaProdutosCache = state.produtos || [];
+    document.getElementById('cIdentificados').innerText = listaProdutosCache.length;
+    document.getElementById('tableCountBadge').innerText = listaProdutosCache.length + ' de ' + listaProdutosCache.length + ' itens';
+    renderizarTabela(listaProdutosCache);
+
+    document.getElementById('serverClock').innerText = 'Sincronizado: ' + new Date().toLocaleTimeString();
+  }
+
+  function renderizarTabela(produtos) {
+    const tbody = document.getElementById('tableBody');
+    if (!produtos.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="center" style="color:var(--text-dim); padding:24px;">Nenhum produto identificado neste lote ainda.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    produtos.forEach((p, idx) => {
+      const tr = document.createElement('tr');
+      const serialImei = [p.serial, p.imei].filter(Boolean).join(' / ') || p.serialImei || '-';
+      const isRevisar = p.status === 'PENDENTE_REVISAO';
+      const linkLabel = 'LINK (' + (p.qtde || 1) + ')';
+
+      tr.innerHTML = `
+        <td class="center" style="color:var(--text-dim);">${idx + 1}</td>
+        <td>
+          <div class="model-name">
+            <span>${esc(p.modelo)}</span>
+            ${isRevisar ? '<span class="badge-revisar">REVISAR</span>' : ''}
+          </div>
+          <div class="model-sub">Marca: ${esc(p.marca || 'Genérico')} • Serial e IMEI cruzados entre etiqueta e fotos</div>
+        </td>
+        <td>
+          <div class="serial-val">${esc(serialImei)}</div>
+          <div class="serial-sub">${p.imei ? 'IMEI' : (p.serial ? 'SERIAL' : 'IDENTIFICADOR')}</div>
+        </td>
+        <td>${esc(p.ean || '-')}</td>
+        <td class="center" style="font-weight:700;">${esc(p.qtde || 1)}</td>
+        <td class="center" style="color:var(--text-muted);">${esc(p.data)}</td>
+        <td class="center">${esc(p.qtdDia)}</td>
+        <td class="center"><span style="background:#18181b; padding:2px 8px; border-radius:4px; font-weight:700;">${esc(p.caixa)}</span></td>
+        <td>
+          <input class="nfe-input" id="nfe_${esc(p.productId)}" value="${esc(p.nfe || '')}" placeholder="NF..." onchange="salvarNfe('${esc(p.productId)}')">
+        </td>
+        <td class="center">
+          <a class="link-btn" href="#" onclick="abrirFotoDrive('${esc(p.productId)}'); return false;">${linkLabel}</a>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function filtrarTabela() {
+    const q = document.getElementById('searchBox').value.toLowerCase().trim();
+    if (!q) {
+      renderizarTabela(listaProdutosCache);
+      document.getElementById('tableCountBadge').innerText = listaProdutosCache.length + ' de ' + listaProdutosCache.length + ' itens';
+      return;
+    }
+    const filtrados = listaProdutosCache.filter(p => {
+      const texto = (p.modelo + ' ' + p.serial + ' ' + p.imei + ' ' + p.ean + ' ' + p.nfe).toLowerCase();
+      return texto.includes(q);
+    });
+    renderizarTabela(filtrados);
+    document.getElementById('tableCountBadge').innerText = filtrados.length + ' de ' + listaProdutosCache.length + ' itens';
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // --- CONTROLE DE CÂMERA E FLUXO CONTÍNUO ---
+
+  function dispararCamera() {
+    // Se o WebRTC estiver disponível (ex: Web App em tela cheia), abre o visor ao vivo
+    // Se estiver bloqueado pelo iframe da Planilha, aciona a câmera nativa com acúmulo contínuo
+    if (!webrtcSuportado) {
+      document.getElementById('cameraInput').click();
+      return;
+    }
+    abrirCamera();
+  }
+
+  async function abrirCamera() {
+    document.getElementById('cameraModal').classList.add('active');
+    await iniciarCameraStream();
+  }
+
+  function fecharCamera() {
+    document.getElementById('cameraModal').classList.remove('active');
+    pararStream();
+  }
+
+  function pararStream() {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(t => t.stop());
+      mediaStream = null;
+    }
+  }
+
+  async function iniciarCameraStream() {
+    pararStream();
+    const video = document.getElementById('videoElem');
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: currentFacing }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      video.srcObject = mediaStream;
+      webrtcSuportado = true;
+    } catch (e1) {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = mediaStream;
+        webrtcSuportado = true;
+      } catch (e2) {
+        // Bloqueio do iframe do Google Sheets
+        webrtcSuportado = false;
+        fecharCamera();
+        document.getElementById('cameraInput').click();
+
+        let texto = '📸 Câmera Sequencial Ativa (Vídeo WebRTC bloqueado pelo iframe da planilha). As fotos estão sendo acumuladas com sucesso!';
+        if (webAppUrl) {
+          texto += ' <br>👉 <a href="' + webAppUrl + '" target="_blank" style="color:#6ee7b7; text-decoration:underline; font-weight:bold;">Clique aqui para abrir em tela cheia no Web App</a> se preferir usar a câmera de vídeo ao vivo sem restrições.';
+        }
+        setAlerta(texto, 'info');
+      }
+    }
+  }
+
+  async function alternarLente() {
+    currentFacing = (currentFacing === 'environment') ? 'user' : 'environment';
+    await iniciarCameraStream();
+  }
+
+  function tirarFotoCamera() {
+    const video = document.getElementById('videoElem');
+    const canvas = document.getElementById('canvasElem');
+    if (!video.videoWidth) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+    const flash = document.getElementById('cameraFlash');
+    flash.style.opacity = '0.9';
+    setTimeout(() => { flash.style.opacity = '0'; }, 80);
+
+    filaFotos.push({
+      name: 'cam_' + Date.now() + '.jpg',
+      data: dataUrl,
+      base64: dataUrl.split(',')[1],
+      mimeType: 'image/jpeg'
+    });
+
+    atualizarReelCamera();
+    renderizarThumbs();
+  }
+
+  function atualizarReelCamera() {
+    const reel = document.getElementById('cameraReel');
+    document.getElementById('snapCount').innerText = filaFotos.length;
+    reel.innerHTML = '';
+    filaFotos.forEach((f) => {
+      const img = document.createElement('img');
+      img.src = f.data;
+      img.style.cssText = 'width:44px; height:44px; object-fit:cover; border-radius:4px; border:1px solid #3f3f46;';
+      reel.appendChild(img);
+    });
+  }
+
+  function fecharEEnviarCamera() {
+    fecharCamera();
+    if (filaFotos.length > 0) {
+      renderizarThumbs();
+    }
+  }
+
+  // --- CAPTURA NATIVA DO CELULAR COM ACÚMULO E SEQUÊNCIA AUTOMÁTICA ---
+
+  async function handleCameraSnap(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setAlerta('Comprimindo foto capturada...', 'info');
+
+    for (let f of files) {
+      try {
+        const item = await comprimirImagem(f);
+        filaFotos.push(item); // ACUMULA SEMPRE, NUNCA SUBSTITUI
+      } catch (err) {
+        console.warn('Erro ao processar', err);
+      }
+    }
+    e.target.value = ''; // Limpa para permitir novo disparo
+    renderizarThumbs();
+
+    const total = filaFotos.length;
+    document.getElementById('photoBadgeCount').innerText = total;
+    document.getElementById('btnNextPhoto').style.display = 'inline-flex';
+
+    setAlerta('✅ Foto ' + total + ' adicionada com sucesso ao lote! Toque em <strong>"📸 BATER PRÓXIMA FOTO"</strong> para fotografar o próximo detalhe ou <strong>"🚀 ENVIAR LOTE"</strong> para a IA.', 'success');
+  }
+
+  // --- SELEÇÃO DE VÁRIAS FOTOS DA GALERIA (SEM CAPTURE: MULTI-SELEÇÃO) ---
+
+  async function handleGalleryFiles(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setAlerta('Comprimindo ' + files.length + ' foto(s) da galeria...', 'info');
+
+    for (let f of files) {
+      try {
+        const item = await comprimirImagem(f);
+        filaFotos.push(item);
+      } catch (err) {
+        console.warn('Erro ao processar', err);
+      }
+    }
+    e.target.value = '';
+    renderizarThumbs();
+    setAlerta(filaFotos.length + ' foto(s) acumuladas no lote.', 'success');
+  }
+
+  function comprimirImagem(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1600;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+          resolve({
+            name: file.name.replace(/\.[^.]+$/, '') + '.jpg',
+            data: dataUrl,
+            base64: dataUrl.split(',')[1],
+            mimeType: 'image/jpeg'
+          });
+        };
+        img.onerror = reject;
+        img.src = ev.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderizarThumbs() {
+    const box = document.getElementById('thumbsBox');
+    const list = document.getElementById('thumbsList');
+    const total = filaFotos.length;
+    document.getElementById('photoCounter').innerText = total;
+    document.getElementById('photoBtnCount').innerText = total;
+    document.getElementById('photoBadgeCount').innerText = total;
+
+    if (!total) {
+      box.style.display = 'none';
+      document.getElementById('btnNextPhoto').style.display = 'none';
+      return;
+    }
+    box.style.display = 'block';
+    document.getElementById('btnNextPhoto').style.display = 'inline-flex';
+    list.innerHTML = '';
+
+    filaFotos.forEach((p, idx) => {
+      const div = document.createElement('div');
+      div.className = 'thumb-item';
+      div.innerHTML = `<img src="${p.data}"><button class="thumb-del" onclick="removerFotoFila(${idx})">×</button>`;
+      list.appendChild(div);
+    });
+  }
+
+  function removerFotoFila(idx) {
+    filaFotos.splice(idx, 1);
+    renderizarThumbs();
+  }
+
+  function limparFila() {
+    filaFotos = [];
+    renderizarThumbs();
+    setAlerta('Fila de fotos limpa.', 'info');
+  }
+
+  function enviarFotosFila() {
+    if (!filaFotos.length) return;
+    const btn = document.getElementById('btnUpload');
+    btn.disabled = true;
+    btn.innerText = '⏳ Enviando fotos para o Google Drive...';
+    setAlerta('Enviando ' + filaFotos.length + ' foto(s) para o Google Drive. A IA Gemini 3.5 processará em segundo plano.', 'info');
+
+    const payload = filaFotos.map(p => ({
+      name: p.name,
+      base64: p.base64,
+      mimeType: p.mimeType
+    }));
+
+    google.script.run
+      .withSuccessHandler(res => {
+        btn.disabled = false;
+        btn.innerText = '🚀 ENVIAR LOTE PARA IA E PLANILHA';
+        setAlerta(res.mensagem, 'success');
+        filaFotos = [];
+        renderizarThumbs();
+        atualizarTudo();
+      })
+      .withFailureHandler(err => {
+        btn.disabled = false;
+        btn.innerText = '🚀 ENVIAR LOTE PARA IA E PLANILHA';
+        setAlerta('Falha: ' + (err.message || String(err)), 'error');
+      })
+      .uploadFotos(DEVICE_ID, LOTE_ID, payload);
+  }
+
+  function novoLote() {
+    const resp = prompt('Defina o número da nova Caixa para o lote seguinte:');
+    if (!resp) return;
+    setAlerta('Criando novo lote com caixa congelada...', 'info');
+    google.script.run
+      .withSuccessHandler(lote => {
+        LOTE_ID = lote.id;
+        safeStorageSet('scanlote_lote_id', LOTE_ID);
+        setAlerta('✓ Novo lote ' + lote.id + ' criado com Caixa ' + lote.caixa + ' (CONGELADA).', 'success');
+        atualizarTudo();
+      })
+      .withFailureHandler(err => setAlerta(err.message, 'error'))
+      .criarNovoLote(DEVICE_ID, parseInt(resp, 10));
+  }
+
+  function salvarNfe(productId) {
+    const val = document.getElementById('nfe_' + productId).value;
+    google.script.run
+      .withSuccessHandler(() => {
+        setAlerta('NFE salva com sucesso!', 'success');
+        atualizarTudo();
+      })
+      .withFailureHandler(err => setAlerta(err.message, 'error'))
+      .atualizarNfe(productId, val);
+  }
+
+  function reprocessar() {
+    if (!LOTE_ID) return;
+    setAlerta('Reenfileirando lote para reanálise da IA Gemini 3.5...', 'info');
+    google.script.run
+      .withSuccessHandler(res => {
+        setAlerta(res.mensagem, 'info');
+        atualizarTudo();
+      })
+      .reprocessarLote(LOTE_ID);
+  }
+
+  function abrirPlanilha() {
+    google.script.run
+      .withSuccessHandler(url => window.open(url, '_blank'))
+      .getSpreadsheetUrl();
+  }
+
+  function limparOrfaos() {
+    if (!confirm('Deseja excluir fotos órfãs não identificadas?')) return;
+    google.script.run
+      .withSuccessHandler(r => setAlerta(r.removidos + ' foto(s) órfã(s) limpa(s).', 'success'))
+      .limparOrfaosValidados();
+  }
+
+  function abrirFotoDrive(productId) {
+    const item = listaProdutosCache.find(x => x.productId === productId);
+    if (!item) return;
+    google.script.run
+      .withSuccessHandler(url => window.open(url, '_blank'))
+      .getSpreadsheetUrl();
+  }
+</script>
+</body>
+</html>

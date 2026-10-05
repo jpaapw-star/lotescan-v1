@@ -1,0 +1,10 @@
+{
+  "name": "Remix AI - Recebimento e Inventário Inteligente",
+  "description": "Sistema web inteligente para recebimento, identificação, organização, registro e rastreamento de produtos por fotografia com IA Gemini, controle de lotes, caixas congeladas e deduplicação.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
