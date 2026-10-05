@@ -15,6 +15,19 @@ export class GoogleSheetsService {
     accessToken: string,
     spreadsheetId: string
   ): Promise<SheetMetadata> {
+    if (!accessToken || accessToken.startsWith("mock-")) {
+      return {
+        id: spreadsheetId,
+        title: "Planilha Local (Mock)",
+        sheets: [
+          { id: 0, title: "RESUMO_CAIXAS" },
+          { id: 1, title: "MANIFESTO" },
+          { id: 2, title: "INVENTARIO" },
+          { id: 3, title: "LOTES" },
+        ],
+        spreadsheetUrl: "#",
+      };
+    }
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },

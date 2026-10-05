@@ -287,7 +287,7 @@ app.post("/api/sync/outbox/complete", (req, res) => {
 });
 
 // 3. Upload de Fotos (Multipart ou Base64 da Câmera) - Não-bloqueante
-app.post("/api/upload", upload.array("photos"), async (req, res) => {
+app.post("/api/upload", upload.array("photos") as any, async (req, res) => {
   try {
     const operatorId = (req.body.operatorId || req.body.deviceId || "Carlos Silveira") as string;
     const deviceId = operatorId;
@@ -784,7 +784,7 @@ app.get("/api/manifestos", (req, res) => {
   }
 });
 
-app.post("/api/manifestos/upload", upload.array("manifestos", 15), async (req, res) => {
+app.post("/api/manifestos/upload", upload.array("manifestos", 15) as any, async (req, res) => {
   try {
     const files = req.files as Express.Multer.File[] | undefined;
     if (!files || files.length === 0) {

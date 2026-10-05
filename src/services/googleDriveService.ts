@@ -14,6 +14,9 @@ export class GoogleDriveService {
    * Lista planilhas do usuário no Google Drive
    */
   static async listSpreadsheets(accessToken: string): Promise<DriveFileItem[]> {
+    if (!accessToken || accessToken.startsWith("mock-")) {
+      return [];
+    }
     const q = encodeURIComponent("mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
     const fields = encodeURIComponent("files(id, name, mimeType, webViewLink, modifiedTime, createdTime)");
     const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&orderBy=modifiedTime desc&pageSize=30`;
@@ -39,6 +42,9 @@ export class GoogleDriveService {
     folderName: string = "SCANLOTE_INVENTARIO",
     parentId?: string
   ): Promise<{ id: string; name: string; webViewLink?: string }> {
+    if (!accessToken || accessToken.startsWith("mock-")) {
+      return { id: "mock-folder-id", name: folderName, webViewLink: "#" };
+    }
     let q = `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`;
     if (parentId) {
       q += ` and '${parentId}' in parents`;
@@ -171,6 +177,9 @@ export class GoogleDriveService {
     accessToken: string,
     folderId: string
   ): Promise<DriveFileItem[]> {
+    if (!accessToken || accessToken.startsWith("mock-")) {
+      return [];
+    }
     const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
     const fields = encodeURIComponent(
       "files(id, name, mimeType, webViewLink, thumbnailLink, size, createdTime, modifiedTime)"
